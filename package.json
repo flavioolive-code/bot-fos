@@ -1,0 +1,36 @@
+{
+  "name": "whatsapp-finance-bot",
+  "version": "1.0.0",
+  "description": "Bot financeiro pessoal para WhatsApp - Controle de gastos, contas e lista de compras",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "finance",
+    "expense-tracker",
+    "baileys"
+  ],
+  "author": "Flavio Oliveira",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/speech": "^6.0.0",
+    "@google-cloud/vision": "^4.0.0",
+    "@whiskeysockets/baileys": "^6.7.8",
+    "dotenv": "^16.0.0",
+    "googleapis": "^100.0.0",
+    "moment": "^2.29.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/qrcode-terminal": "^0.12.2",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}
