@@ -31,6 +31,13 @@ export class MessageHandler {
   async handleMessage(message: proto.IWebMessageInfo): Promise<void> {
     const jid = this.connection.getSenderJid(message);
     const messageType = this.connection.getMessageType(message);
+    const messageText = this.connection.getMessageText(message);
+
+    console.log(`\n📩 Mensagem recebida!`);
+    console.log(`   Tipo: ${messageType}`);
+    console.log(`   JID: ${jid}`);
+    console.log(`   Texto: ${messageText}`);
+    console.log(`   De mim: ${message.key.fromMe ? 'Sim' : 'Não'}`);
 
     try {
       switch (messageType) {
@@ -44,26 +51,19 @@ export class MessageHandler {
           await this.handleImageMessage(jid, message);
           break;
         default:
-          await this.connection.sendReply(
-            jid,
-            '❓ Tipo de mensagem não suportado. Envie texto, áudio ou imagem.',
-            message
-          );
+          console.log(`   ⚠️ Tipo não suportado: ${messageType}`);
       }
     } catch (error) {
-      console.error('Erro ao processar mensagem:', error);
-      await this.connection.sendReply(
-        jid,
-        '❌ Erro ao processar mensagem. Tente novamente.',
-        message
-      );
+      console.error('❌ Erro ao processar mensagem:', error);
     }
   }
 
   private async handleTextMessage(jid: string, message: proto.IWebMessageInfo): Promise<void> {
     const text = this.connection.getMessageText(message).trim().toLowerCase();
+    console.log(`   📝 Processando texto: "${text}"`);
 
     if (this.isCommand(text, ['ajuda', 'help', 'comandos'])) {
+      console.log(`   ✅ Comando: Ajuda`);
       await this.sendHelp(jid, message);
       return;
     }
@@ -102,51 +102,14 @@ export class MessageHandler {
   }
 
   private async handleAudioMessage(jid: string, message: proto.IWebMessageInfo): Promise<void> {
-    const canUse = await this.monitorService.canUseService('speech');
-    
-    if (!canUse.allowed) {
-      await this.connection.sendReply(jid, canUse.alert!, message);
-      return;
-    }
-
-    await this.connection.sendReply(jid, '🎙️ Processando áudio...', message);
-
-    const audioBuffer = await this.connection.downloadMedia(message);
-    if (!audioBuffer) {
-      await this.connection.sendReply(jid, '❌ Não foi possível baixar o áudio.', message);
-      return;
-    }
-
-    const duration = this.speechService.getAudioDuration(audioBuffer);
-    
-    try {
-      const transcription = await this.speechService.transcribeAudio(audioBuffer);
-      
-      if (!transcription) {
-        await this.connection.sendReply(jid, '❌ Não consegui entender o áudio. Tente novamente.', message);
-        return;
-      }
-
-      await this.monitorService.recordUsage('speech', duration);
-
-      const alertInfo = await this.monitorService.checkUsage('speech');
-      const alertMessage = this.monitorService.formatAlert(alertInfo);
-
-      await this.connection.sendReply(
-        jid,
-        `🎙️ *Transcrição:*\n"${transcription}"\n\nProcessando...`,
-        message
-      );
-
-      await this.processTranscription(jid, message, transcription);
-
-      if (alertMessage) {
-        await this.connection.sendReply(jid, alertMessage, message);
-      }
-    } catch (error) {
-      console.error('Erro na transcrição:', error);
-      await this.connection.sendReply(jid, '❌ Erro ao transcrever áudio. Tente novamente.', message);
-    }
+    await this.connection.sendReply(
+      jid,
+      '🎙️ *Áudio não disponível no momento*\n\n' +
+      'O processamento de áudio será ativado em breve!\n' +
+      'Por enquanto, use mensagens de texto para registrar seus gastos.\n\n' +
+      '💡 *Exemplo:* "Almoço R$50"',
+      message
+    );
   }
 
   private async handleImageMessage(jid: string, message: proto.IWebMessageInfo): Promise<void> {
