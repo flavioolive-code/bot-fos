@@ -1,17 +1,27 @@
+FROM node:20-slim AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
 FROM node:20-slim
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev && npm cache clean --force
 
-COPY . .
+COPY --from=builder /app/dist ./dist
 
-RUN npm run build
+ENV NODE_OPTIONS="--max-old-space-size=384"
 
 EXPOSE 3000
 
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-CMD ["npm", "run", "dev"]
+CMD ["node", "dist/index.js"]
