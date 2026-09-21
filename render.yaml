@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bot-fos
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=512
+    healthCheckPath: /
