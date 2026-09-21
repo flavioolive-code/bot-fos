@@ -2,12 +2,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import * as http from 'http';
-import { WhatsAppConnection } from './whatsapp/connection';
-import { MessageHandler } from './whatsapp/handler';
-import { SheetsService } from './services/sheets';
-import { SpeechService } from './services/speech';
-import { VisionService } from './services/vision';
-import { MonitorService } from './services/monitor';
 
 const PORT = process.env.PORT || 3000;
 
@@ -24,15 +18,16 @@ async function main(): Promise<void> {
   console.log('🤖 Iniciando Bot FOS...\n');
 
   try {
+    console.log('📊 Carregando módulos...');
+    
+    const { WhatsAppConnection } = await import('./whatsapp/connection');
+    const { MessageHandler } = await import('./whatsapp/handler');
+    const { SheetsService } = await import('./services/sheets');
+    const { MonitorService } = await import('./services/monitor');
+
     console.log('📊 Conectando ao Google Sheets...');
     const sheetsService = new SheetsService();
     await sheetsService.initialize();
-
-    console.log('🎙️ Inicializando serviço de áudio...');
-    const speechService = new SpeechService();
-
-    console.log('📸 Inicializando serviço de visão...');
-    const visionService = new VisionService();
 
     console.log('📈 Inicializando monitoramento...');
     const monitorService = new MonitorService(sheetsService);
@@ -43,8 +38,6 @@ async function main(): Promise<void> {
     const handler = new MessageHandler(
       connection,
       sheetsService,
-      speechService,
-      visionService,
       monitorService
     );
 

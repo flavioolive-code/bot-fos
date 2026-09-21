@@ -1,8 +1,6 @@
 import { proto } from '@whiskeysockets/baileys';
 import { WhatsAppConnection } from './connection';
 import { SheetsService } from '../services/sheets';
-import { SpeechService } from '../services/speech';
-import { VisionService } from '../services/vision';
 import { MonitorService } from '../services/monitor';
 import { extractAmount, formatCurrency } from '../utils/currency';
 import { formatDate, extractDueDate, isDueSoon, isOverdue } from '../utils/date';
@@ -10,21 +8,15 @@ import { formatDate, extractDueDate, isDueSoon, isOverdue } from '../utils/date'
 export class MessageHandler {
   private connection: WhatsAppConnection;
   private sheetsService: SheetsService;
-  private speechService: SpeechService;
-  private visionService: VisionService;
   private monitorService: MonitorService;
 
   constructor(
     connection: WhatsAppConnection,
     sheetsService: SheetsService,
-    speechService: SpeechService,
-    visionService: VisionService,
     monitorService: MonitorService
   ) {
     this.connection = connection;
     this.sheetsService = sheetsService;
-    this.speechService = speechService;
-    this.visionService = visionService;
     this.monitorService = monitorService;
   }
 
@@ -113,71 +105,13 @@ export class MessageHandler {
   }
 
   private async handleImageMessage(jid: string, message: proto.IWebMessageInfo): Promise<void> {
-    const canUse = await this.monitorService.canUseService('vision');
-    
-    if (!canUse.allowed) {
-      await this.connection.sendReply(jid, canUse.alert!, message);
-      return;
-    }
-
-    await this.connection.sendReply(jid, '📸 Analisando imagem...', message);
-
-    const imageBuffer = await this.connection.downloadMedia(message);
-    if (!imageBuffer) {
-      await this.connection.sendReply(jid, '❌ Não foi possível baixar a imagem.', message);
-      return;
-    }
-
-    try {
-      const receipt = await this.visionService.analyzeReceipt(imageBuffer);
-      
-      await this.monitorService.recordUsage('vision', 1);
-
-      const alertInfo = await this.monitorService.checkUsage('vision');
-      const alertMessage = this.monitorService.formatAlert(alertInfo);
-
-      if (receipt.total > 0) {
-        await this.sheetsService.addExpense({
-          amount: receipt.total,
-          category: 'Compras',
-          description: receipt.store,
-          date: receipt.date,
-          source: 'image'
-        });
-
-        let response = `✅ *Gasto registrado!*\n\n` +
-          `🏪 ${receipt.store}\n` +
-          `💰 ${formatCurrency(receipt.total)}\n` +
-          `📅 ${formatDate(receipt.date)}`;
-
-        if (receipt.items.length > 0) {
-          response += `\n\n📋 *Itens:*\n`;
-          receipt.items.slice(0, 5).forEach(item => {
-            response += `• ${item.name}: ${formatCurrency(item.price)}\n`;
-          });
-          if (receipt.items.length > 5) {
-            response += `... e mais ${receipt.items.length - 5} itens`;
-          }
-        }
-
-        await this.connection.sendReply(jid, response, message);
-      } else {
-        const text = await this.visionService.extractTextFromImage(imageBuffer);
-        await this.connection.sendReply(
-          jid,
-          `📸 *Texto extraído:*\n\n${text.substring(0, 500)}\n\n` +
-          `💡 Envie o valor manualmente se não foi识别ado.`,
-          message
-        );
-      }
-
-      if (alertMessage) {
-        await this.connection.sendReply(jid, alertMessage, message);
-      }
-    } catch (error) {
-      console.error('Erro na análise de imagem:', error);
-      await this.connection.sendReply(jid, '❌ Erro ao analisar imagem. Tente novamente.', message);
-    }
+    await this.connection.sendReply(
+      jid,
+      '📸 *Processamento de imagens em breve!*\n\n' +
+      'Por enquanto, use mensagens de texto para registrar seus gastos.\n\n' +
+      '💡 *Exemplo:* "Almoço R$50"',
+      message
+    );
   }
 
   private async handleExpenseInput(jid: string, message: proto.IWebMessageInfo, text: string): Promise<void> {
@@ -384,12 +318,7 @@ export class MessageHandler {
       `• "Limpar lista" - Limpar lista\n\n` +
       `📊 *Consultas:*\n` +
       `• "Resumo" - Resumo do mês\n` +
-      `• "Total" - Total gasto\n\n` +
-      `🎙️ *Áudio:*\n` +
-      `• Envie áudio falando o gasto\n\n` +
-      `📸 *Imagem:*\n` +
-      `• Envie foto de recibo\n\n` +
-      `💡 *Dica:* Use texto para economizar minutos de áudio!`;
+      `• "Total" - Total gasto`;
 
     await this.connection.sendReply(jid, helpText, message);
   }
