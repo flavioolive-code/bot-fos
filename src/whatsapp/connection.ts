@@ -16,6 +16,7 @@ export class WhatsAppConnection {
   private authDir: string;
   private messageHandler: ((message: proto.IWebMessageInfo) => void) | null = null;
   private qrCount: number = 0;
+  private userJid: string = '';
 
   constructor() {
     this.authDir = path.join(process.cwd(), 'credentials', 'baileys-auth');
@@ -62,6 +63,11 @@ export class WhatsAppConnection {
       if (connection === 'open') {
         console.log('✅ Bot FOS conectado ao WhatsApp!');
         this.cleanupQRFiles();
+        
+        if (this.sock?.user) {
+          this.userJid = this.sock.user.id || '';
+          console.log(`👤 Seu JID: ${this.userJid}`);
+        }
       }
     });
 
@@ -75,9 +81,10 @@ export class WhatsAppConnection {
         if (!message.key.fromMe) continue;
 
         const jid = message.key.remoteJid || '';
+        
         if (jid.endsWith('@g.us')) continue;
-        if (jid.includes('@lid')) continue;
 
+        console.log(`📩 Mensagem aceita de: ${jid}`);
         if (this.messageHandler) {
           this.messageHandler(message);
         }

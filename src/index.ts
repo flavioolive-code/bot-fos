@@ -1,12 +1,24 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+import * as http from 'http';
 import { WhatsAppConnection } from './whatsapp/connection';
 import { MessageHandler } from './whatsapp/handler';
 import { SheetsService } from './services/sheets';
 import { SpeechService } from './services/speech';
 import { VisionService } from './services/vision';
 import { MonitorService } from './services/monitor';
+
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot FOS está rodando!');
+});
+
+server.listen(PORT, () => {
+  console.log(`🌐 Servidor HTTP rodando na porta ${PORT}`);
+});
 
 async function main(): Promise<void> {
   console.log('🤖 Iniciando Bot FOS...\n');
